@@ -10,7 +10,7 @@ install_requires = [
 
 setup(
     name='particlezoo',
-    version='0.0.1',
+    version='0.0.2',
     description='A particle zoo module',
     install_requires=install_requires,
     packages=find_packages(),
@@ -18,6 +18,7 @@ setup(
     include_package_data=True,
     test_requires=["pytest"],
     author="Nathan Papapietro <npapapietro95@gmail.com>",
+    author_email="npapapietro95@gmail.com",
     url="https://github.com/npapapietro/liesym",
     classifiers=[
         "Topic :: Scientific/Engineering :: Mathematics",
