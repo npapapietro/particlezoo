@@ -6,7 +6,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 install_requires = [
-    "liesym>=0.1.2"
+    "liesym>=0.2.0"
 ]
 
 setup(

@@ -44,8 +44,10 @@ def _parse_algebra(algebra: Union[str, list]) -> Union[LieAlgebra, None]:
 
 
 class TemplateParser:
-    def __init__(self, fpath: str):
-        self.template = self._load(fpath)
+    def __init__(self, fpath: str=None):
+        self.template = None
+        if fpath is not None:
+            self.template = self._load(fpath)
 
     def _load(self, fpath: str) -> dict:
         _, ext = os.path.splitext(fpath)
@@ -85,6 +87,18 @@ class TemplateParser:
         if len(set([x['name'] for x in gauges])) != len(gauges):
             raise TemplateError("Each gauge group name must be unique")
 
+        coupling_names = []
+        for x in gauges:
+            c = x.get('coupling')
+            if c is None:
+                raise TemplateError("All gauges must have a coupling")
+            if isinstance(c, dict):
+                coupling_names.append(c['name'])
+            else:
+                coupling_names.append(c)
+        if len(coupling_names) != len(gauges):
+            raise TemplateError("Each gauge group coupling must be unique")
+
         return [TemplateParser._parse_gauge(x) for x in gauges]
 
     @staticmethod
@@ -95,7 +109,7 @@ class TemplateParser:
         if len(set([x['name'] for x in fields])) != len(fields):
             raise TemplateError("Each fields name must be unique")
 
-        return [FieldModel(**x) for x in fields]
+        return [FieldModel.from_kwargs(**x) for x in fields]
 
     @staticmethod
     def _parse_gauge(gauge: dict) -> GaugeModel:

@@ -22,11 +22,19 @@ class Algebra:
     def backend(self):
         return self._backend
 
-    def lookup_rep(self, rep_dim: str) -> Matrix:
-        """Performs as lookup from the common dimensional 
-        names for representations to the dynkin indexed vector.
+    def lookup_rep(self, symbol: str) -> Union[Matrix, Basic]:
+        """Looks up the irrep based on a latex symbol. If this algebra is 
+        U1, then the result is a scalar.
+
+        Args:
+            symbol (str): Latex formatted symbol of the irrep
+
+        Returns:
+            Matrix: Irrep in the dynkin indexed group representation.
         """
-        return None
+        if self._backend is None:
+            return sympify(symbol)
+        return self._backend.irrep_lookup(Symbol(symbol))
 
 
 class NumericSymbol:
@@ -99,6 +107,9 @@ class GaugeModel:
         self._coupling = coupling
         self.key = name
 
+    def __repr__(self) -> str:
+        return f"<Gauge name='{self.name}'>"
+
 
 class FieldModel:
 
@@ -128,6 +139,26 @@ class FieldModel:
     def set_representation(self, gauge, rep):
         self._representations[gauge].update({"representation", rep})
 
+    @classmethod
+    def from_kwargs(cls, **kwargs):
+        """Constructor from kwargs, validates required fields"""
+        name = kwargs.get("name")
+        spin = kwargs.get("spin")
+        if name is None or spin is None:
+            raise TemplateError("Field must have a name and spin")
+
+        representations = kwargs.get("representations", [])
+        mass = kwargs.get("mass")
+        description = kwargs.get("description")
+
+        return cls(
+            name=name,
+            spin=spin,
+            representations=representations,
+            mass=mass,
+            description=description
+        )
+
     def __init__(
         self,
         name: str,
@@ -139,9 +170,8 @@ class FieldModel:
         self._raw_name = name
         self._name = Symbol(self._raw_name)
         self._description = description
-        self._spin = sympify(spin)
+        self._spin = self._parse_spin(spin)
         self._mass = self._parse_mass(mass)
-        print(representations)
         self._representations = self._parse_representations(representations)
 
     def _parse_mass(self, mass):
@@ -150,24 +180,38 @@ class FieldModel:
             return NumericSymbol(mass_name, 0, 0)
         return NumericSymbol.from_input(mass)
 
+    def _parse_spin(self, spin: str) -> Basic:
+        """Ensures spin is integer or half integer"""
+        spin = sympify(spin)
+        if spin.is_integer and spin >= 0:
+            return spin
+        if (2 * spin).is_integer:
+            return spin
+
+        raise TemplateError("Spin is not integer or half integer")
+
     def _parse_representations(self, reps: List[Dict]):
-        
-        try:
-            # validate unique group names
-            if len(set([x['name'] for x in reps])) != len(reps):
-                raise TemplateError(
-                    f"Duplicate representation in {self._raw_name}")
 
-            representations = {}
-            for rep in reps:  
-                rep_new = {**rep}             
-                name = rep_new.pop('name')
-                r = rep_new.get("representation")                
-                if r is not None:
-                    rep_new['representation'] = Matrix([r])
-                representations[name] = rep_new
-            return representations
+        representations = {}
+        for rep in reps:
+            if 'name' not in rep or not ('charge' in rep or 'representation' in rep):
+                self._raise_rep_error()
+            rep_new = {**rep}             
+            name = rep_new.pop('name')
+            representations[name] = rep_new
 
-        except KeyError as e:
+        # validate unique group names
+        if len(set([x['name'] for x in reps])) != len(reps):
             raise TemplateError(
-                "Representations keys are 'name', 'charge' and 'representations' (optional)")
+                f"Duplicate representation in {self._raw_name}")
+        return representations
+
+    def _raise_rep_error(self):
+        raise TemplateError(
+            ("fields.representations list items must be a str,str dict with keys:\n"
+             "'name': required, \n"
+             "'charge' or 'representation': choose one, required"
+             ))
+
+    def __repr__(self) -> str:
+        return 
