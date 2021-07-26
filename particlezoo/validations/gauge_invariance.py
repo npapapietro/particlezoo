@@ -3,7 +3,7 @@ from liesym import Group, LieGroup
 from sympy import Matrix, Symbol
 import logging
 
-from ..datamodels import GenericField
+from ..datamodels import FieldModel
 from ..exceptions import ConfigError
 
 def is_gauge_invariant_repr(terms: Iterable[Union[Matrix, Symbol, str]], group: Group) -> bool:
@@ -46,14 +46,14 @@ def is_gauge_invariant_repr(terms: Iterable[Union[Matrix, Symbol, str]], group: 
     return any([x[1] == 1 for x in results])
 
 
-def is_gauge_invariant(terms: Iterable[GenericField], **kwargs) -> Tuple[bool, str]:
-    """Checks a group of GenericFields for gauge invariance.
+def is_gauge_invariant(terms: Iterable[FieldModel], **kwargs) -> Tuple[bool, str]:
+    """Checks a group of FieldModels for gauge invariance.
 
     Args:
-        terms (Iterable[GenericField]): Group of interacting GenericFields
+        terms (Iterable[FieldModel]): Group of interacting FieldModels
 
     Raises:
-        ConfigError: Error with configuring GenericField
+        ConfigError: Error with configuring FieldModel
 
     Returns:
         Tuple[bool, str]: Returns flag and name of failing gauge group or empty string.
@@ -81,7 +81,7 @@ def is_gauge_invariant(terms: Iterable[GenericField], **kwargs) -> Tuple[bool, s
                 group.append(obj.group)
         
         if len(set(group)) != 1:
-            raise ConfigError("GenericField.representations matching keys should have matching group")
+            raise ConfigError("FieldModel.representations matching keys should have matching group")
         
         gauge_group = group[0]
         if not (is_invar:=is_gauge_invariant_repr(reps, gauge_group)):

@@ -2,7 +2,7 @@ from sympy import Matrix
 import liesym as ls
 
 import particlezoo.validations.gauge_invariance as tp
-from particlezoo import GenericField, Representation
+from particlezoo import FieldModel, RepresentationModel
 
 
 def test_is_gauge_invariant_repr():
@@ -25,32 +25,32 @@ def test_is_gauge_invariant_repr():
 
 def test_is_gauge_invariant():
     
-    quark = GenericField(
+    quark = FieldModel(
         "quark",
         "1/2",
         {
-            "QCD": Representation(Matrix([[1,0]]), ls.SU(3)),
-            "WEAK": Representation(Matrix([[1]]), ls.SU(2)),
-            "Z2": Representation("Z_0", ls.Z(2)),
+            "QCD": RepresentationModel(Matrix([[1,0]]), ls.SU(3)),
+            "WEAK": RepresentationModel(Matrix([[1]]), ls.SU(2)),
+            "Z2": RepresentationModel("Z_0", ls.Z(2)),
         }
     )
 
-    quark_bar = GenericField(
+    quark_bar = FieldModel(
         "quark_bar",
         "1/2",
         {
-            "QCD": Representation(Matrix([[0,1]]), ls.SU(3)),
-            "WEAK": Representation(Matrix([[1]]), ls.SU(2)),
-            "Z2": Representation("Z_1", ls.Z(2)),
+            "QCD": RepresentationModel(Matrix([[0,1]]), ls.SU(3)),
+            "WEAK": RepresentationModel(Matrix([[1]]), ls.SU(2)),
+            "Z2": RepresentationModel("Z_1", ls.Z(2)),
         }
     )
 
-    gluon = GenericField(
+    gluon = FieldModel(
         "gluon",
         "1",
         {
-            "QCD": Representation(Matrix([[1,1]]), ls.SU(3)),
-            "Z2": Representation("Z_1", ls.Z(2)),
+            "QCD": RepresentationModel(Matrix([[1,1]]), ls.SU(3)),
+            "Z2": RepresentationModel("Z_1", ls.Z(2)),
         }
     )
 

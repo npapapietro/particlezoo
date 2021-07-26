@@ -1,18 +1,59 @@
-from sympy import Symbol, Basic, sympify
-from typing import Dict, NamedTuple
+from sympy import Symbol, Basic, sympify, Matrix
+from typing import Dict, Union
+from liesym import Group
 
 from ..exceptions import ModelError
-from .structs import Representation
+# from .raw import Representation
 
 
-class GenericField:
+class _BaseModel:
+    @property
+    def name(self) -> Basic:
+        """Name, latex enabled string"""
+        return self._name
+
+    @property
+    def description(self) -> str:
+        """Description of this object"""
+        return self._description
+
+    def __init__(self, name, description):
+        self._name = name
+        self._description = description or ""
+
+
+class RepresentationModel:
+    @property
+    def group(self) -> Group:
+        """An instance of the group the representation is under"""
+        return self._group
+
+    @property
+    def rep(self) -> Union[Matrix, Basic]:
+        """The representation under self.group"""
+        return self._rep
+
+    def __init__(self, rep, group):
+        self._rep = rep
+        self._group = group
+
+
+class SymmetryModel(_BaseModel):
+
+    @property
+    def group(self) -> Group:
+        """An instance of the group"""
+        return self._group
+
+    def __init__(self, name, group, description=None):
+        self._group = group
+        super().__init__(name, description)
+
+
+class FieldModel(_BaseModel):
     """A base field class that holds information information
     about the class after being parsed.
     """
-    @property
-    def name(self) -> Symbol:
-        """Name of the field"""
-        return self._name
 
     @property
     def spin(self) -> Basic:
@@ -34,12 +75,7 @@ class GenericField:
         return self._particle_class == "boson"
 
     @property
-    def description(self) -> str:
-        """Returns the description of the field"""
-        return self._description or ""
-
-    @property
-    def representations(self) -> Dict[str, Representation]:
+    def representations(self) -> Dict[str, RepresentationModel]:
         """Returns the representations of the field.
         The keys correspond to the gauge field names 
         and the values are dictionary of the charge 
@@ -50,7 +86,7 @@ class GenericField:
         self,
         name: str,
         spin: str,
-        representations: Dict[str, Representation],
+        representations: Dict[str, RepresentationModel],
         description=None,
         no_mass=False
     ):
@@ -63,15 +99,13 @@ class GenericField:
             description (str, optional): Optional description of field. Defaults to None.
             no_mass (bool, optional): Flag if field has mass. Defaults to False.
         """
-        self._raw_name = name
-        self._name = Symbol(self._raw_name)
-        self._description = description
-        self._mass_dimension = None
-        self._particle_class = ""
-        self._spin = self._parse_spin(spin)
+        super().__init__(Symbol(name), description)
         self._representations = representations
-        self.key = name
+        self._particle_class = ""
+        self._mass_dimension = None
+        self._spin = self._parse_spin(spin)
         self.no_mass = no_mass
+        self._raw_name = name
 
     def _parse_spin(self, spin: str) -> Basic:
         """Ensures spin is integer or half integer"""

@@ -5,5 +5,5 @@ Structs are comprised of basic types incoming from the configuration file (yaml,
 and then parsed into instances.
 """
 
-from .models import GenericField
-from .structs import Representation
+from .models import FieldModel, RepresentationModel, SymmetryModel
+from .raw import SymmetryGroup, GenericField, Configuration
