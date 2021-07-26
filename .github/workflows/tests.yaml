@@ -1,8 +1,3 @@
-# Largely taken from https://github.com/PyO3/pyo3/blob/master/.github/workflows/ci.yml
-
-# Cargo test is broken right now because of extension module
-# https://github.com/PyO3/pyo3/issues/1084
-
 name: Test Module
 on:
   pull_request:
