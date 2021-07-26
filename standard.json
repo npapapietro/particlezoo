@@ -1,0 +1,27 @@
+{
+  "name": "Standard Model",
+  "gauges": [
+    {
+      "name": "U(1)_Y",
+      "group_type": "abelian",
+      "coupling": "g_Y"
+    },
+    {
+      "name": "SU(2)_L",
+      "group_type": ["SU", "2"],
+      "coupling": "g_L"
+    }
+  ],
+  "fields": [
+    {
+      "name": "L",
+      "description": "Left handed lepton",
+      "spin": "1/2",
+      "mass": "m_L",
+      "representations": [
+        { "name": "U(1)_Y", "charge": "1/6" },
+        { "name": "SU(2)_L", "charge": "2", "representation": [1] }
+      ]
+    }
+  ]
+}
