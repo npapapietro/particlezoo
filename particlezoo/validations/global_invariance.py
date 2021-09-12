@@ -2,14 +2,16 @@ from typing import Iterable, Tuple
 import logging
 from enum import Enum
 
-from ..datamodels import GenericField
+from ..builders import Field
+
 
 class Renormalizability(Enum):
     SuperRenorm = 0
     Renorm = 1
     NonRenorm = 2
 
-def validate_mass_dim(terms: Iterable[GenericField], **kwargs) -> Renormalizability:
+
+def validate_mass_dim(terms: Iterable[Field], **kwargs) -> Renormalizability:
     """Based on the mass dimension of all the fields in the interactions, calculates
     what level of renormalization the interaction
 
@@ -19,9 +21,10 @@ def validate_mass_dim(terms: Iterable[GenericField], **kwargs) -> Renormalizabil
     Returns:
         Renormalizability: Level of renormalization
     """
-    if not isinstance(terms, list):
-        terms = list(terms)
-    
+    if isinstance(terms, (list, tuple)):
+        raise TypeError(f"terms must be a iterable of type {type(Field)}")
+
+    terms: Iterable[Field] = terms
     name = kwargs.get("name", "Interaction")
     n_terms = len(terms)
     logging.debug(f"Validating (Mass dim): {name} with {n_terms} terms")
@@ -33,4 +36,3 @@ def validate_mass_dim(terms: Iterable[GenericField], **kwargs) -> Renormalizabil
     if mass_dim == 4:
         return Renormalizability.Renorm
     return Renormalizability.NonRenorm
-        

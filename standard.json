@@ -1,9 +1,9 @@
 {
   "name": "Standard Model",
-  "gauges": [
+  "symmetries": [
     {
       "name": "U(1)_Y",
-      "group_type": "abelian",
+      "group_type": ["U","1"],
       "coupling": "g_Y"
     },
     {

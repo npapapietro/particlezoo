@@ -1,5 +1,9 @@
+from __future__ import annotations
+
 from typing import Dict, List, NamedTuple, Union, Optional
 
+"""These are the models that appear in the serialized config formats.
+"""
 
 class SymmetryGroup(NamedTuple):
     """A symmetry represented by a single group.
@@ -7,12 +11,18 @@ class SymmetryGroup(NamedTuple):
     Members:
         description (Optional[str]): Description of the group
         name (str): Unique name for group. Can be latex string.
-        group (str): Mathematical group
-
+        group (list[str]): Mathematical group of [type, dim]
+        coupling (Optional[str]): Optional coupling if symmetry is gauged.
+        gauged (bool): If this is a gauged symmetry (as opposed to a global symmetry)
+        tag (Optional[str]): A optional tag. Ex: `U(1)_Y` where tag = `Y`. Supercedes name in equation writing
     """
     description: Optional[str]
     name: str
-    group: str
+    group: list[str]
+    coupling: Optional[str]
+    gauged: bool
+    tag: Optional[str]
+
 
 class GenericField(NamedTuple):
     """A field.
@@ -29,9 +39,10 @@ class GenericField(NamedTuple):
     description: Optional[str]
     representations: Dict[str, Union[str, list]]
 
+
 class Configuration(NamedTuple):
     """Parent object for reading in the configuration file.
-    
+
     Members:
         name (str): Name of the model, can be latex string
         version (Optional[str]): Version of model

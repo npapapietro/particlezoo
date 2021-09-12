@@ -1,2 +1,2 @@
 from .validations import is_gauge_invariant_repr
-from .datamodels import FieldModel, RepresentationModel
+from .builders import Field, Representation, Symmetry

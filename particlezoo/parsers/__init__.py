@@ -1,4 +1,4 @@
-from ..datamodels import Configuration
+from ..builders import Configuration
 from .transform import group_lookup
 from .consume import open_file, consume_config
 

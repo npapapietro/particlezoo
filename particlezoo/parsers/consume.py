@@ -5,7 +5,7 @@ from typing import cast, Union
 from os.path import splitext
 
 from ..exceptions import ConfigError
-from ..datamodels import Configuration, SymmetryGroup, GenericField
+from ..builders import Configuration, SymmetryGroup, GenericField
 
 
 def open_toml(fname: str) -> dict:
@@ -61,15 +61,26 @@ def consume_symmetry(config: dict) -> SymmetryGroup:
     """Consumes the symmetry on the config"""
     description = config.get("description", "")
 
-    group = config.get("group", "")
-    if group.strip() == "":
+    group = config.get("group", [])
+    if len(group) == 0:
         raise ConfigError("`group` required on `symmetries`.")
 
     name = config.get("name", "")
     if name.strip() == "":
         raise ConfigError("`name` required on `fields`.")
 
-    return SymmetryGroup(description=description, name=name, group=group)
+    # explicit search, encode/decode?
+    coupling = config.get("coupling")
+    gauged = config.get("gauged")
+    tag = config.get("tag")
+
+    return SymmetryGroup(
+        description=description,
+        name=name,
+        group=group,
+        coupling=coupling,
+        gauged=gauged,
+        tag=tag)
 
 
 def consume_fields(config: dict) -> GenericField:
@@ -91,7 +102,12 @@ def consume_fields(config: dict) -> GenericField:
     representations = {k: consume_representation(v)
                        for k, v in representations.items()}
 
-    return GenericField(name=name, spin=spin, description=description, representations=representations)
+    return GenericField(
+        name=name,
+        spin=spin,
+        description=description,
+        representations=representations
+    )
 
 
 def consume_config(config: dict) -> Configuration:
