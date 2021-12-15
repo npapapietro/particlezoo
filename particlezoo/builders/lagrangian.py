@@ -10,8 +10,8 @@ class Lagrangian:
                  particle_contents: list[Field],
                  symmetries: list[Symmetry],
                  name: str,
-                 version: str,
-                 description: str
+                 version: str = None,
+                 description: str = None
                  ):
         self._particle_contents = particle_contents
         self._symmetries = symmetries
@@ -45,3 +45,24 @@ class Lagrangian:
     @property
     def nonabelian_symmetries(self):
         return [x for x in self._symmetries if not x.is_abelian]
+
+    def _build_graphs(self, field: Field):
+        ke_graphs = self._build_ke_graphs(field)
+
+    def _build_ke_graphs(self, field: Field):
+
+        reps = field.representations
+        for k, _ in reps.items(): # use rep soon?
+            sym = self._get_sym(k)
+            if field.is_boson:
+                # self._boson_ke_graph(field, sym)
+                pass
+
+    # def _boson_ke_graph
+
+    def _get_sym(self, name: str):
+        """Utility lookup for getting symmetry"""
+        for i in self._symmetries:
+            if i == name:
+                return i
+        raise ValueError("Cannot find symmetry.")

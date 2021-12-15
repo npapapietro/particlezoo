@@ -8,11 +8,20 @@ from liesym import Group, LieGroup, E
 from ..exceptions import ModelError
 
 
-class BaseModel:
+class BaseModel(Basic):
+
+    def __new__(cls, name, description=None):
+        obj = Basic.__new__(cls, sympify(name))
+        obj._description = description or ""
+        return obj
+
+    def _repr_latex_(self):
+        return self.name._repr_latex_()
+
     @property
     def name(self) -> Basic:
         """Name, latex enabled string"""
-        return self._name
+        return self.args[0]
 
     @property
     def description(self) -> str:
@@ -28,10 +37,6 @@ class BaseModel:
             otherwise it will be a tensor expression.
         """
         pass
-
-    def __init__(self, name, description):
-        self._name = name
-        self._description = description or ""
 
 
 class Representation:
@@ -51,6 +56,39 @@ class Representation:
 
 
 class Symmetry(BaseModel):
+
+    def __new__(cls,
+                name,
+                group,
+                gauged,
+                coupling,
+                description=None,
+                tag=None):
+        obj = super().__new__(cls, Symbol(name), description)
+        obj._group = group
+        obj._gauged = gauged
+        obj._coupling = coupling
+        obj._tag = tag
+        return obj
+
+    def __init__(self,
+                 name: str,
+                 group: Group,
+                 gauged: bool,
+                 coupling: str,
+                 description: str = None,
+                 tag: str = None
+                 ):
+        """Creates a symmetry used in the lagrangian.
+
+        Args:
+            name (str): Name of the symmetry
+            group (Group): The liesym.Group that dictates the symmetry.
+            gauged (bool): If this is a gauged symmetry (as opposed to global).
+            coupling (str): A coupling coefficient for the symmetry.
+            description (str, optional): Description of the symmetry. Defaults to None.
+            tag (str, optional): Optional tag for the model, used in latex repr. Defaults to None.
+        """
 
     @property
     def group(self) -> Group:
@@ -80,16 +118,25 @@ class Symmetry(BaseModel):
         """
         return self._tag
 
+    @property
+    def gauge_name(self):
+        """Gauge boson name."""
+        n = f"A_{self.tag or self.name}"
+        if isinstance(self.group, (LieGroup, E)):
+            n += "^a"
+        return n
+
+    @property
+    def gaugino_name(self):
+        raise NotImplementedError("Coming Soon?")
+
     def _kinetic_term(self):
         """Returns tuple of factor, contra and covariant terms"""
-        base = f"A_{self.tag or self.name}"
-        if isinstance(self.group, (LieGroup, E)):
-            base += "^a"
 
         Lorentz = TensorIndexType("Lorentz", dummy_name="L", dim=4)
         mu = TensorIndex("mu", Lorentz)
         nu = TensorIndex("nu", Lorentz)
-        A = TensorHead(base, [Lorentz, Lorentz])
+        A = TensorHead(self.gauge_name, [Lorentz, Lorentz])
         contravariant = A(mu, nu)
         covariant = A(-mu, -nu)
         factor = sympify("-1/4")
@@ -116,25 +163,71 @@ class Symmetry(BaseModel):
             return fac_tex + contra_tex + co_tex
         return fac * contra * co
 
-    def __init__(self,
-                 name,
-                 group,
-                 gauged,
-                 coupling,
-                 description=None,
-                 tag=None):
-        self._group = group
-        self._gauged = gauged
-        self._coupling = coupling
-        self._tag = tag
+    def __hash__(self):
+        return self.name.__hash__()
 
-        super().__init__(name, description)
+    def __eq__(self, other):
+        if isinstance(other, Symmetry):
+            return self.__hash__() == other.__hash__()
+        if isinstance(other, str):
+            return str(self.name) == other
+        return False
 
 
 class Field(BaseModel):
     """A base field class that holds information information
     about the class after being parsed.
     """
+
+    def __new__(cls,
+                name: str,
+                spin: str,
+                representations: Dict[str, Representation],
+                description=None,
+                no_mass=True):
+        """Creates a Generic field.
+
+        Args:
+            name (str): Name of field. Latex enabled string.
+            spin (str): Spin of the field
+            representations (Dict[str, Representation]): Dict of fields representations.
+            description (str, optional): Optional description of field. Defaults to None.
+            no_mass (bool, optional): Flag if field has mass. Defaults to True.
+
+        Examples
+        ========
+        >>> import particlezoo as zoo
+        >>> f = zoo.Field("psi", "1/2", {"U1_x": "q"})
+        """
+        obj = super().__new__(cls, Symbol(name), description)
+        obj._representations = representations
+        obj._particle_class = ""
+        obj._mass_dimension = None
+        obj._spin = Field._parse_spin(obj, spin)
+        obj.no_mass = no_mass
+        obj._raw_name = name
+        return obj
+
+    def __init__(cls,
+                 name: str,
+                 spin: str,
+                 representations: Dict[str, Representation],
+                 description=None,
+                 no_mass=True):
+        """Creates a Generic field.
+
+        Args:
+            name (str): Name of field. Latex enabled string.
+            spin (str): Spin of the field
+            representations (Dict[str, Representation]): Dict of fields representations.
+            description (str, optional): Optional description of field. Defaults to None.
+            no_mass (bool, optional): Flag if field has mass. Defaults to True.
+
+        Examples
+        ========
+        >>> import particlezoo as zoo
+        >>> f = zoo.Field("psi", "1/2", {"U1_x": "q"})
+        """
 
     @property
     def spin(self) -> Basic:
@@ -163,31 +256,7 @@ class Field(BaseModel):
         and representation"""
         return self._representations
 
-    def __init__(
-        self,
-        name: str,
-        spin: str,
-        representations: Dict[str, Representation],
-        description=None,
-        no_mass=False
-    ):
-        """Creates a Generic field.
-
-        Args:
-            name (str): Name of field. Latex enabled string.
-            spin (str): Spin of the field
-            representations (Dict[str, Representation]): Dict of fields representations.
-            description (str, optional): Optional description of field. Defaults to None.
-            no_mass (bool, optional): Flag if field has mass. Defaults to False.
-        """
-        super().__init__(Symbol(name), description)
-        self._representations = representations
-        self._particle_class = ""
-        self._mass_dimension = None
-        self._spin = self._parse_spin(spin)
-        self.no_mass = no_mass
-        self._raw_name = name
-
+    @staticmethod
     def _parse_spin(self, spin: str) -> Basic:
         """Ensures spin is integer or half integer"""
         spin_: Basic = sympify(spin)
@@ -225,16 +294,19 @@ class Field(BaseModel):
             terms = Dagger(deriv_co*self.name), deriv_contra, self.name
             return "".join([latex(x) for x in terms])
         else:
-            terms = I,  conjugate(self.name),  deriv_co, symbols(
+            terms = I, conjugate(self.name),  deriv_co, symbols(  # type:ignore
                 "\gamma^mu"), self.name
             return "".join([latex(x) for x in terms])
         # return ""
+
     def _kinetic_term(self, mode='symbol', **kwargs) -> Union[str, Basic]:
         if mode not in ['symbol', 'latex', 'diagram', 'diagram-compile']:
-            raise ValueError("mode must be one of 'symbol', 'latex', 'diagram', 'diagram-compile'")
-        
+            raise ValueError(
+                "mode must be one of 'symbol', 'latex', 'diagram', 'diagram-compile'")
+
         if mode == 'symbol':
             return self._kinetic_symbol()
+        return ""
 
     def _kinetic_symbol(self):
         if self.is_boson:
@@ -250,5 +322,20 @@ class Field(BaseModel):
     def _key_symbol_fermion(self):
         deriv_co = symbols("\partial_mu")
         return I,  conjugate(self.name),  deriv_co, symbols(
-                "\gamma^mu"), self.name
-        
+            "\gamma^mu"), self.name
+
+    @property
+    def conjugate_name(self):
+        if self.is_boson:
+            name = str(self.name)
+            return Symbol(f"{name}^\dagger")
+        else:
+            return conjugate(self.name)
+
+    def __hash__(self):
+        return self.name.__hash__()
+
+    def __eq__(self, other):
+        if isinstance(other, Field):
+            return self.__hash__() == other.__hash__()
+        return False
